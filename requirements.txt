@@ -11,3 +11,4 @@ tiktoken==0.8.0
 pypdf==5.1.0
 psycopg_pool==3.2.3
 sqlglot==25.34.1
+google-adk==2.14.0
