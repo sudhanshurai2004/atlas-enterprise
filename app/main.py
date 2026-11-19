@@ -1,0 +1,20 @@
+from fastapi import FastAPI
+
+from app.config import settings
+
+
+def create_app() -> FastAPI:
+    app = FastAPI(
+        title="Atlas",
+        version="0.1.0",
+        debug=settings.app_env == "local",
+    )
+
+    @app.get("/health")
+    def health() -> dict[str, str]:
+        return {"status": "ok"}
+
+    return app
+
+
+app = create_app()
