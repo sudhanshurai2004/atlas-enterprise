@@ -9,3 +9,4 @@ google-cloud-aiplatform==1.82.0
 google-cloud-storage==2.18.0
 tiktoken==0.8.0
 pypdf==5.1.0
+psycopg_pool==3.2.3

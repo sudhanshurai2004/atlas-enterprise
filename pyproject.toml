@@ -4,3 +4,4 @@ line-length = 88
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["integration: requires database and embeddings"]
