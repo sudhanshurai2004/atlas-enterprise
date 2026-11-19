@@ -5,7 +5,7 @@ from google.adk.agents import Agent
 
 critic_agent = Agent(
     name="critic_agent",
-    model="gemini-3.8-flash",
+    model="gemini-2.5-flash",
     instruction=(
         "Critique an answer for citation coverage and confidence. "
         "If confidence is below 0.7 or citations are missing, request "

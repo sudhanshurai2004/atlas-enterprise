@@ -17,13 +17,15 @@ def test_query_requires_auth() -> None:
 
 
 def test_auth_token_and_history(monkeypatch) -> None:
+    monkeypatch.setattr("app.api.auth.settings.api_username", "demo")
+    monkeypatch.setattr("app.api.auth.settings.api_password", "demo-password")
     monkeypatch.setattr(
         "app.api.routes.get_history",
         lambda session_id: [],
     )
     token_response = client.post(
         "/auth/token",
-        json={"username": "demo", "password": "demo"},
+        json={"username": "demo", "password": "demo-password"},
     )
     assert token_response.status_code == 200
 
@@ -40,3 +42,14 @@ def test_create_token() -> None:
 
     assert isinstance(token, str)
     assert token
+
+
+def test_login_rejects_unconfigured_credentials(monkeypatch) -> None:
+    monkeypatch.setattr("app.api.auth.settings.api_username", None)
+    monkeypatch.setattr("app.api.auth.settings.api_password", None)
+    response = client.post(
+        "/auth/token",
+        json={"username": "demo", "password": "demo"},
+    )
+
+    assert response.status_code == 503

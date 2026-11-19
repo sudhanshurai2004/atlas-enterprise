@@ -15,9 +15,13 @@ export default function Chat() {
   async function submit(event) {
     event.preventDefault();
     setAnswer("");
-    await streamQuery(question, sessionId, (word) => {
-      setAnswer((current) => `${current}${current ? " " : ""}${word}`);
-    });
+    setCitations([]);
+    await streamQuery(
+      question,
+      sessionId,
+      (text) => setAnswer((current) => `${current}${text}`),
+      (result) => setCitations(result.citations || [])
+    );
   }
 
   return (

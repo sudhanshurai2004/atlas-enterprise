@@ -5,8 +5,7 @@ from typing import Any
 import psycopg
 import sqlglot
 from sqlglot import exp
-import vertexai
-from vertexai.generative_models import GenerativeModel
+from google import genai
 
 from app.config import settings
 from app.tools.schema_context import FEW_SHOT_EXAMPLES, TABLE_DDL
@@ -37,12 +36,15 @@ def generate_sql(question: str) -> str:
         f"Question: {question}\nSQL:"
     )
 
-    vertexai.init(
-        project=settings.gcp_project_id,
-        location=settings.gcp_region,
+    if not settings.google_api_key:
+        raise RuntimeError("GOOGLE_API_KEY is required for Google AI Studio")
+    client = genai.Client(api_key=settings.google_api_key)
+    response = client.models.generate_content(
+        model=settings.google_genai_model,
+        contents=prompt,
     )
-    model = GenerativeModel("gemini-3.8-flash")
-    response = model.generate_content(prompt)
+    if response.text is None:
+        raise RuntimeError("Gemini returned an empty SQL response")
     sql = response.text.strip().strip("`")
     sql = re.sub(r"^sql\s*", "", sql, flags=re.IGNORECASE)
     return sql.strip()

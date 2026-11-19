@@ -8,7 +8,7 @@ from app.agents.summarizer_agent import summarizer_agent
 
 supervisor = Agent(
     name="atlas_supervisor",
-    model="gemini-3.8-flash",
+    model="gemini-2.5-flash",
     instruction=(
         "Decompose the question. Delegate to exactly one sub-agent at a time "
         "using evidence needs: rag_agent for runbooks or documents, "

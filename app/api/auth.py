@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import secrets
 from typing import Any
 
 import jwt
@@ -27,7 +28,15 @@ def create_token(username: str) -> str:
 
 
 def issue_token(request: LoginRequest) -> dict[str, str]:
-    if not request.username or not request.password:
+    if not settings.api_username or not settings.api_password:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="API login credentials are not configured",
+        )
+    if not (
+        secrets.compare_digest(request.username, settings.api_username)
+        and secrets.compare_digest(request.password, settings.api_password)
+    ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",

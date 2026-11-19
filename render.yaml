@@ -10,10 +10,12 @@ services:
         value: production
       - key: JWT_SECRET
         generateValue: true
-      - key: GCP_PROJECT_ID
+      - key: GOOGLE_API_KEY
         sync: false
-      - key: GCP_REGION
-        value: asia-south1
+      - key: API_USERNAME
+        sync: false
+      - key: API_PASSWORD
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: REDIS_URL

@@ -1,40 +1,52 @@
-import os
 import time
 from typing import Sequence
 
-import vertexai
-from vertexai.language_models import TextEmbeddingModel
+from google import genai
+from google.genai import types
+
+from app.config import settings
 
 
-MODEL_NAME = "gemini-embedding-2"
+MODEL_NAME = settings.google_embedding_model
 BATCH_SIZE = 5
+EMBEDDING_DIMENSIONS = 3072
 
 
-def _model() -> TextEmbeddingModel:
-    vertexai.init(
-        project=os.getenv("GCP_PROJECT_ID", "atlas-demo"),
-        location=os.getenv("GCP_REGION", "asia-south1"),
-    )
-    return TextEmbeddingModel.from_pretrained(MODEL_NAME)
+def _client() -> genai.Client:
+    if not settings.google_api_key:
+        raise RuntimeError("GOOGLE_API_KEY is required for Google AI Studio")
+    return genai.Client(api_key=settings.google_api_key)
 
 
 def embed_texts(
     texts: Sequence[str],
     task_type: str,
 ) -> list[list[float]]:
-    model = _model()
+    client = _client()
     embeddings: list[list[float]] = []
 
     for start in range(0, len(texts), BATCH_SIZE):
         batch = list(texts[start : start + BATCH_SIZE])
-        response = model.get_embeddings(
-            batch,
-            task_type=task_type,
+        response = client.models.embed_content(
+            model=MODEL_NAME,
+            contents=batch,
+            config=types.EmbedContentConfig(
+                task_type=task_type,
+                output_dimensionality=EMBEDDING_DIMENSIONS,
+            ),
         )
-        embeddings.extend([item.values for item in response])
+        if response.embeddings is None:
+            raise RuntimeError("Embedding API returned no embeddings")
+        embeddings.extend(
+            [list(item.values or []) for item in response.embeddings]
+        )
         if start + BATCH_SIZE < len(texts):
             time.sleep(0.2)
 
+    if any(len(embedding) != EMBEDDING_DIMENSIONS for embedding in embeddings):
+        raise ValueError(
+            f"Embedding model must return {EMBEDDING_DIMENSIONS} dimensions"
+        )
     return embeddings
 
 

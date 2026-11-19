@@ -8,6 +8,7 @@ export default function App() {
   );
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   return authorized ? (
     <Chat />
@@ -17,14 +18,20 @@ export default function App() {
       <form
         onSubmit={async (event) => {
           event.preventDefault();
-          await login(username, password);
-          setAuthorized(true);
+          setError("");
+          try {
+            await login(username, password);
+            setAuthorized(true);
+          } catch {
+            setError("Login failed. Check your credentials and try again.");
+          }
         }}
       >
         <input value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Username" />
         <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" />
         <button type="submit">Login</button>
       </form>
+      {error && <p role="alert">{error}</p>}
     </main>
   );
 }

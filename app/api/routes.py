@@ -1,20 +1,24 @@
+import json
+import logging
 import time
 import uuid
 from typing import Any
 
 import psycopg
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.api.auth import get_current_user, issue_token, LoginRequest
 from app.api.cache import get_cached_answer, set_cached_answer
-from app.api.state import append_turn, get_history
+from app.api.state import append_turn, client, get_history, record_query
 from app.config import settings
 from app.pricing import calculate_cost
+from app.agents.runtime import run_supervisor
 
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 class QueryRequest(BaseModel):
@@ -40,17 +44,16 @@ def query(
         answer = cached
         cache_hit = True
     else:
-        answer = {
-            "answer": (
-                f"Atlas processed '{request.question}' with the multi-agent supervisor."
-            ),
-            "citations": [],
-            "confidence": 0.5,
-        }
+        answer = run_supervisor(
+            request.question,
+            user["username"],
+            request.session_id,
+        )
         cache_hit = False
         set_cached_answer(request.question, answer)
 
     append_turn(request.session_id, request.question, answer["answer"])
+    total_queries, cache_hits = record_query(cache_hit)
     latency_ms = int((time.perf_counter() - started) * 1000)
     input_tokens = len(request.question.split())
     output_tokens = len(answer["answer"].split())
@@ -76,13 +79,18 @@ def query(
                         trace_id,
                     ),
                 )
-    except psycopg.Error:
-        pass
+    except psycopg.Error as exc:
+        logger.exception("Could not write query log")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Query logging is unavailable",
+        ) from exc
 
     return {
         **answer,
         "trace_id": trace_id,
         "cache_hit": cache_hit,
+        "cache_hit_percentage": round(cache_hits * 100 / total_queries, 2),
         "cost_usd": cost_usd,
         "latency_ms": latency_ms,
     }
@@ -103,9 +111,12 @@ def query_stream(
 ) -> StreamingResponse:
     def events():
         response = query(request, user)
-        words = response["answer"].split()
-        for word in words:
-            yield f"data: {word}\n\n"
+        answer = response["answer"]
+        words = answer.split()
+        for index, word in enumerate(words):
+            text = word if index == 0 else f" {word}"
+            yield f"event: token\ndata: {json.dumps({'text': text})}\n\n"
+        yield f"event: result\ndata: {json.dumps(response)}\n\n"
         yield "event: done\ndata: [DONE]\n\n"
 
     return StreamingResponse(events(), media_type="text/event-stream")
@@ -132,17 +143,22 @@ def metrics(
                     """
                 )
                 avg_tokens, avg_cost, avg_latency = cursor.fetchone()
-    except psycopg.Error:
-        return {
-            "avg_tokens_per_request": 0,
-            "avg_cost_per_request": 0,
-            "avg_latency_ms": 0,
-            "cache_hit_percentage": 0,
-        }
+    except psycopg.Error as exc:
+        logger.exception("Could not read query metrics")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Metrics are unavailable",
+        ) from exc
 
+    total_queries = int(client.get("atlas:metrics:queries") or 0)
+    cache_hits = int(client.get("atlas:metrics:cache_hits") or 0)
     return {
         "avg_tokens_per_request": round(float(avg_tokens), 2),
         "avg_cost_per_request": round(float(avg_cost), 6),
         "avg_latency_ms": round(float(avg_latency), 2),
-        "cache_hit_percentage": 0,
+        "cache_hit_percentage": (
+            round(cache_hits * 100 / total_queries, 2)
+            if total_queries
+            else 0
+        ),
     }
