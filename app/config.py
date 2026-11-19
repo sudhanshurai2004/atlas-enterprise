@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     gcp_project_id: str = "atlas-demo"
     gcp_region: str = "asia-south1"
     database_url: str = "postgresql://atlas:atlas_dev@localhost:5432/atlas"
+    gcs_bucket: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
