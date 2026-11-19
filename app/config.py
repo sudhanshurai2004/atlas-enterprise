@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     gcp_region: str = "asia-south1"
     database_url: str = "postgresql://atlas:atlas_dev@localhost:5432/atlas"
     gcs_bucket: str | None = None
+    redis_url: str = "redis://localhost:6379/0"
+    jwt_secret: str = "atlas-local-secret"
 
     model_config = SettingsConfigDict(
         env_file=".env",
