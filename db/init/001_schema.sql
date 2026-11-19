@@ -36,3 +36,12 @@ CREATE TABLE query_logs (
   trace_id TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+CREATE TABLE billing_customers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  plan TEXT NOT NULL,
+  error_code TEXT,
+  error_at TIMESTAMPTZ,
+  mrr_usd NUMERIC(12,2) NOT NULL
+);
