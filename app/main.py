@@ -11,13 +11,17 @@ def create_app() -> FastAPI:
         version="0.1.0",
         debug=settings.app_env == "local",
     )
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[
+    allowed_origins = {
+        "https://atlas-enterprise-frontend.vercel.app",
+        *(
             origin.strip()
             for origin in settings.cors_origins.split(",")
             if origin.strip()
-        ],
+        ),
+    }
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=sorted(allowed_origins),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
