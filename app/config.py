@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     gcs_bucket: str | None = None
     redis_url: str = "redis://localhost:6379/0"
     jwt_secret: str = "atlas-local-secret"
+    cors_origins: str = "http://localhost:5173"
 
     model_config = SettingsConfigDict(
         env_file=".env",

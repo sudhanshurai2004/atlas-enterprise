@@ -1,0 +1,5 @@
+{"question":"How to rotate database credentials?","expected":"rotate credentials","kind":"rag","citations":["Runbook"]}
+{"question":"Which customers hit error E-42?","expected":"E-42","kind":"sql","citations":[]}
+{"question":"Which customers hit E-42 and what does the runbook say?","expected":"E-42 and database runbook","kind":"hybrid","citations":["Runbook"]}
+{"question":"What is the failover procedure?","expected":"failover","kind":"rag","citations":["Runbook"]}
+{"question":"List pro customers with E-42.","expected":"pro E-42","kind":"sql","citations":[]}

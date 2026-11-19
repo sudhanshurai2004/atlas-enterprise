@@ -1,0 +1,35 @@
+swagger: "2.0"
+info:
+  title: Atlas API
+  version: "1.0.0"
+schemes:
+  - https
+produces:
+  - application/json
+x-google-backend:
+  address: ${CLOUD_RUN_URL}
+paths:
+  /health:
+    get:
+      operationId: health
+      responses:
+        "200":
+          description: Healthy
+  /auth/token:
+    post:
+      operationId: authToken
+      responses:
+        "200":
+          description: Token
+  /query:
+    post:
+      operationId: query
+      responses:
+        "200":
+          description: Query response
+  /metrics:
+    get:
+      operationId: metrics
+      responses:
+        "200":
+          description: Metrics
